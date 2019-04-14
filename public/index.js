@@ -517,64 +517,48 @@ function drawOrganizationChart(params) {
 
     }
 
-    // function click(d) {
-
-    //     d3.select(this).select("text").text(function (dv) {
-
-    //         if (dv.collapseText == attrs.EXPAND_SYMBOL) {
-    //             dv.collapseText = attrs.COLLAPSE_SYMBOL
-    //         } else {
-    //             if (dv.children) {
-    //                 dv.collapseText = attrs.EXPAND_SYMBOL
-    //             }
-    //         }
-    //         return dv.collapseText;
-
-    //     })
-
-    //     if (d.children) {
-    //         d._children = d.children;
-    //         d.children = null;
-    //     } else {
-    //         d.children = d._children;
-    //         d._children = null;
-    //     }
-    //     update(d);
-
-    // }
-
     // Toggle children on click.
     function click(d) {
 
-        var dir = direction.down;
-        var _this = this;
-
-        d3.json(getDataUrl(d.uniqueIdentifier, direction.down), function (resp) {
-
-            d3.select(_this).select("text").text(function (dv) {
-
-                if (dv.collapseText == attrs.EXPAND_SYMBOL) {
-                    dv.collapseText = attrs.COLLAPSE_SYMBOL
-                } else {
-                    if (dv.children) {
-                        dv.collapseText = attrs.EXPAND_SYMBOL
-                    }
-                }
-                return dv.collapseText;
-            });
-
-            if (dir == direction.down && resp.children && resp.children.length) {
-
-                expand(resp);
-                resp.children.forEach((ch) => {
-                    ch.depth = 1 + d.depth
-                    ch.parent = d;
-                });
-                d.children = d.children || [];
-                d.children = d.children.concat(resp.children);
+        const resetNode = (d) => {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
             }
-            update(d);
+        }
+
+        d3.select(this).select("text").text(function (dv) {
+            if (dv.collapseText == attrs.EXPAND_SYMBOL) {
+                dv.collapseText = attrs.COLLAPSE_SYMBOL
+            } else {
+                if (dv.children) {
+                    dv.collapseText = attrs.EXPAND_SYMBOL
+                }
+            }
+            return dv.collapseText;
         });
+
+        if ((d.children && d.children.length) || (d._children && d._children.length)) {
+            resetNode(d);
+            update(d);
+        } else {
+            var dir = direction.down;
+            d3.json(getDataUrl(d.uniqueIdentifier, direction.down), function (resp) {
+                if (dir == direction.down && resp.children && resp.children.length) {
+                    expand(resp);
+                    resp.children.forEach((ch) => {
+                        ch.depth = 1 + d.depth
+                        ch.parent = d;
+                    });
+                    d.children = d.children || [];
+                    d.children = d.children.concat(resp.children);
+                }
+                update(d);
+            });
+        }
     }
 
     //########################################################
