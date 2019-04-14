@@ -5,9 +5,11 @@ const direction = {
 
 const defaultId = 1;
 
+const getDataUrl = (id, dir) => `http://localhost:8081/data/${id}/${dir}`;
+
 var params = {
     selector: "#svgChart",
-    dataLoadUrl: `http://localhost:8081/data/${defaultId}/${direction.down}`,
+    dataLoadUrl: getDataUrl(defaultId, direction.down),
     chartWidth: window.innerWidth - 40,
     chartHeight: window.innerHeight - 40,
     funcs: {
@@ -25,10 +27,15 @@ var params = {
     data: null
 }
 
-d3.json(params.dataLoadUrl, function (data) {
+
+function draw(data) {
     params.data = data;
-    params.pristinaData = JSON.parse(JSON.stringify(data));
     drawOrganizationChart(params);
+}
+
+d3.json(params.dataLoadUrl, function (data) {
+    params.pristinaData = JSON.parse(JSON.stringify(data));
+    draw(data);
 })
 
 function drawOrganizationChart(params) {
@@ -87,6 +94,10 @@ function drawOrganizationChart(params) {
         .scaleExtent(attrs.minMaxZoomProportions)
         .on("zoom", redraw);
 
+    d3.select(attrs.selector)
+        .select('svg')
+        .remove();
+
     var svg = d3.select(attrs.selector)
         .append("svg")
         .attr("width", attrs.width)
@@ -103,11 +114,10 @@ function drawOrganizationChart(params) {
 
     if (params.mode != 'department') {
         // adding unique values to each node recursively
-        var uniq = 1;
-        addPropertyRecursive('uniqueIdentifier', function (v) {
-            return uniq++;
-        }, attrs.root);
-
+        //var uniq = 1;
+        // addPropertyRecursive('uniqueIdentifier', function (v) {
+        //     return uniq++;
+        // }, attrs.root);
     }
 
     expand(attrs.root);
@@ -192,7 +202,7 @@ function drawOrganizationChart(params) {
 
         //hide collapse rect when node does not have children
         collapsibles.attr("r", function (d) {
-                if (d.children || d._children) return attrs.collapseCircleRadius;
+                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
                 return 0;
             })
             .attr("height", attrs.collapseCircleRadius)
@@ -262,7 +272,6 @@ function drawOrganizationChart(params) {
             .attr("y", dynamic.nodeChildCountTopMargin)
             .attr('class', 'emp-count')
             .attr("text-anchor", "left")
-
             .text(function (d) {
                 if (d.children) return d.children.length;
                 if (d._children) return d._children.length;
@@ -388,11 +397,6 @@ function drawOrganizationChart(params) {
             });
 
 
-
-
-
-
-
             // normalize for width/height
             var new_x = (-x + (window.innerWidth / 2));
             var new_y = (-y + (window.innerHeight / 2));
@@ -513,31 +517,64 @@ function drawOrganizationChart(params) {
 
     }
 
+    // function click(d) {
+
+    //     d3.select(this).select("text").text(function (dv) {
+
+    //         if (dv.collapseText == attrs.EXPAND_SYMBOL) {
+    //             dv.collapseText = attrs.COLLAPSE_SYMBOL
+    //         } else {
+    //             if (dv.children) {
+    //                 dv.collapseText = attrs.EXPAND_SYMBOL
+    //             }
+    //         }
+    //         return dv.collapseText;
+
+    //     })
+
+    //     if (d.children) {
+    //         d._children = d.children;
+    //         d.children = null;
+    //     } else {
+    //         d.children = d._children;
+    //         d._children = null;
+    //     }
+    //     update(d);
+
+    // }
+
     // Toggle children on click.
     function click(d) {
 
-        d3.select(this).select("text").text(function (dv) {
+        var dir = direction.down;
+        var _this = this;
 
-            if (dv.collapseText == attrs.EXPAND_SYMBOL) {
-                dv.collapseText = attrs.COLLAPSE_SYMBOL
-            } else {
-                if (dv.children) {
-                    dv.collapseText = attrs.EXPAND_SYMBOL
+        d3.json(getDataUrl(d.uniqueIdentifier, direction.down), function (resp) {
+
+            d3.select(_this).select("text").text(function (dv) {
+
+                if (dv.collapseText == attrs.EXPAND_SYMBOL) {
+                    dv.collapseText = attrs.COLLAPSE_SYMBOL
+                } else {
+                    if (dv.children) {
+                        dv.collapseText = attrs.EXPAND_SYMBOL
+                    }
                 }
+                return dv.collapseText;
+            });
+
+            if (dir == direction.down && resp.children && resp.children.length) {
+
+                expand(resp);
+                resp.children.forEach((ch) => {
+                    ch.depth = 1 + d.depth
+                    ch.parent = d;
+                });
+                d.children = d.children || [];
+                d.children = d.children.concat(resp.children);
             }
-            return dv.collapseText;
-
-        })
-
-        if (d.children) {
-            d._children = d.children;
-            d.children = null;
-        } else {
-            d.children = d._children;
-            d._children = null;
-        }
-        update(d);
-
+            update(d);
+        });
     }
 
     //########################################################
@@ -812,7 +849,7 @@ function drawOrganizationChart(params) {
     }
 
     function setCollapsibleSymbolProperty(d) {
-        if (d._children) {
+        if (d._children || d.nodeHasChildren) {
             d.collapseText = attrs.EXPAND_SYMBOL;
         } else if (d.children) {
             d.collapseText = attrs.COLLAPSE_SYMBOL;
@@ -896,8 +933,6 @@ function drawOrganizationChart(params) {
         }
 
     }
-
-
 
     function showMySelf() {
         /* collapse all and expand logged user nodes */

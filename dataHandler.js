@@ -1,7 +1,7 @@
 const rawData = require('./data.json');
 const _ = require('underscore');
-const getId = (personId, index) => {
-    return String(personId) + String(++index);
+const getId = (id, index) => {
+    return String(id) + String(++index);
 }
 
 const _clone = (data) => {
@@ -12,12 +12,12 @@ function recursivelyIdGenerator(data, parentId) {
     if (data.children) {
         data.children.forEach((ch, index) => {
             ch.parentId = parentId;
-            ch.personId = getId(parentId, index);
+            ch.uniqueIdentifier = getId(parentId, index);
             if (ch.children) {
                 ch.children.forEach((chi, index) => {
                     chi.parentId = parentId;
-                    chi.personId = getId(ch.personId, index);
-                    return recursivelyIdGenerator(chi, chi.personId);
+                    chi.uniqueIdentifier = getId(ch.uniqueIdentifier, index);
+                    return recursivelyIdGenerator(chi, chi.uniqueIdentifier);
                 });
             }
         });
@@ -27,11 +27,11 @@ function recursivelyIdGenerator(data, parentId) {
 
 function IdGenerator(data) {
     const parentId = "";
-    const personId = "1";
+    const uniqueIdentifier = "1";
     data.parentId = parentId;
-    data.personId = personId;
+    data.uniqueIdentifier = uniqueIdentifier;
     data.children.forEach((ch, index) => {
-        ch.personId = getId(parentId, index);
+        ch.uniqueIdentifier = getId(uniqueIdentifier, index);
         recursivelyIdGenerator(ch, index);
     });
 }
@@ -42,7 +42,7 @@ const recursivelyFindTreeNode = (node, nodeId, parentNode, type, result) => {
     if (result) return result;
 
     result = _.find(node.children, {
-        personId: nodeId
+        uniqueIdentifier: nodeId
     });
     if (result && type == "up") {
         result = parentNode;
@@ -60,7 +60,7 @@ const recursivelyFindTreeNode = (node, nodeId, parentNode, type, result) => {
 
 const findTreeNode = (nodeId, type, _clonedData) => {
     let result = null;
-    if (_clonedData.personId == nodeId) {
+    if (_clonedData.uniqueIdentifier == nodeId) {
         return _clonedData;
     } else {
         return recursivelyFindTreeNode(_clonedData, nodeId, _clonedData, type, result);
