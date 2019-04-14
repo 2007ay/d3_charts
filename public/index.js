@@ -133,6 +133,105 @@ function drawOrganizationChart(params) {
         .append('div')
         .attr('class', 'customTooltip-wrapper');
 
+    function createUpArrowIcon(nodeEnter) {
+
+        var collapsiblesWrapper =
+            nodeEnter.append('g')
+            .attr('data-id', function (v) {
+                return ++v.uniqueIdentifier;
+            });
+
+        collapsiblesWrapper.append("rect")
+            .attr('class', 'node-collapse-center-rect')
+            .attr('height', attrs.collapseCircleRadius)
+            .attr('fill', 'black')
+            .attr('x', attrs.nodeWidth / 2 - attrs.collapseCircleRadius)
+            .attr('y', 7)
+            .attr("width", function (d) {
+                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
+                return 0;
+            })
+
+        var collapsibles =
+            collapsiblesWrapper.append("circle")
+            .attr('class', 'node-center')
+            .attr('cx', attrs.nodeWidth / 2 - attrs.collapseCircleRadius)
+            .attr('cy', 7)
+            .attr("", setCollapsibleSymbolProperty);
+
+        //hide collapse rect when node does not have children
+        collapsibles.attr("r", function (d) {
+                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
+                return 0;
+            })
+            .attr("height", attrs.collapseCircleRadius)
+
+        collapsiblesWrapper.append("text")
+            .attr('class', 'text-center')
+            .attr("x", attrs.nodeWidth - attrs.collapseCircleRadius)
+            .attr('y', 5)
+            .attr('width', attrs.collapseCircleRadius)
+            .attr('height', attrs.collapseCircleRadius)
+            .style('font-size', attrs.collapsibleFontSize)
+            .attr("text-anchor", "middle")
+            .style('font-family', 'FontAwesome')
+            .text(function (d) {
+                return d.collapseText;
+            });
+
+        collapsiblesWrapper.on("click", upArrowClick);
+    }
+
+    function upArrowClick() {}
+
+    function createCollapsableIcon(nodeEnter) {
+
+        var collapsiblesWrapper =
+            nodeEnter.append('g')
+            .attr('data-id', function (v) {
+                return v.uniqueIdentifier;
+            });
+
+        collapsiblesWrapper.append("rect")
+            .attr('class', 'node-collapse-right-rect')
+            .attr('height', attrs.collapseCircleRadius)
+            .attr('fill', 'black')
+            .attr('x', attrs.nodeWidth - attrs.collapseCircleRadius)
+            .attr('y', attrs.nodeHeight - 7)
+            .attr("width", function (d) {
+                if (d.children || d._children) return attrs.collapseCircleRadius;
+                return 0;
+            })
+
+        var collapsibles =
+            collapsiblesWrapper.append("circle")
+            .attr('class', 'node-collapse')
+            .attr('cx', attrs.nodeWidth - attrs.collapseCircleRadius)
+            .attr('cy', attrs.nodeHeight - 7)
+            .attr("", setCollapsibleSymbolProperty);
+
+        //hide collapse rect when node does not have children
+        collapsibles.attr("r", function (d) {
+                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
+                return 0;
+            })
+            .attr("height", attrs.collapseCircleRadius)
+
+        collapsiblesWrapper.append("text")
+            .attr('class', 'text-collapse')
+            .attr("x", attrs.nodeWidth - attrs.collapseCircleRadius)
+            .attr('y', attrs.nodeHeight - 3)
+            .attr('width', attrs.collapseCircleRadius)
+            .attr('height', attrs.collapseCircleRadius)
+            .style('font-size', attrs.collapsibleFontSize)
+            .attr("text-anchor", "middle")
+            .style('font-family', 'FontAwesome')
+            .text(function (d) {
+                return d.collapseText;
+            })
+        collapsiblesWrapper.on("click", collapseIconClick);
+    }
+
     function update(source, param) {
 
         // Compute the new tree layout.
@@ -176,51 +275,8 @@ function drawOrganizationChart(params) {
                 return res;
             });
 
-        var collapsiblesWrapper =
-            nodeEnter.append('g')
-            .attr('data-id', function (v) {
-                return v.uniqueIdentifier;
-            });
-
-        var collapsibleRects = collapsiblesWrapper.append("rect")
-            .attr('class', 'node-collapse-right-rect')
-            .attr('height', attrs.collapseCircleRadius)
-            .attr('fill', 'black')
-            .attr('x', attrs.nodeWidth - attrs.collapseCircleRadius)
-            .attr('y', attrs.nodeHeight - 7)
-            .attr("width", function (d) {
-                if (d.children || d._children) return attrs.collapseCircleRadius;
-                return 0;
-            })
-
-        var collapsibles =
-            collapsiblesWrapper.append("circle")
-            .attr('class', 'node-collapse')
-            .attr('cx', attrs.nodeWidth - attrs.collapseCircleRadius)
-            .attr('cy', attrs.nodeHeight - 7)
-            .attr("", setCollapsibleSymbolProperty);
-
-        //hide collapse rect when node does not have children
-        collapsibles.attr("r", function (d) {
-                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
-                return 0;
-            })
-            .attr("height", attrs.collapseCircleRadius)
-
-        collapsiblesWrapper.append("text")
-            .attr('class', 'text-collapse')
-            .attr("x", attrs.nodeWidth - attrs.collapseCircleRadius)
-            .attr('y', attrs.nodeHeight - 3)
-            .attr('width', attrs.collapseCircleRadius)
-            .attr('height', attrs.collapseCircleRadius)
-            .style('font-size', attrs.collapsibleFontSize)
-            .attr("text-anchor", "middle")
-            .style('font-family', 'FontAwesome')
-            .text(function (d) {
-                return d.collapseText;
-            })
-
-        collapsiblesWrapper.on("click", click);
+        createCollapsableIcon(nodeEnter);
+        createUpArrowIcon(nodeEnter);
 
         nodeGroup.append("text")
             .attr("x", dynamic.nodeTextLeftMargin)
@@ -514,11 +570,10 @@ function drawOrganizationChart(params) {
                 tooltip.style('opacity', '0').style('display', 'none');
             }
         });
-
     }
 
     // Toggle children on click.
-    function click(d) {
+    function collapseIconClick(d) {
 
         const resetNode = (d) => {
             if (d.children) {
