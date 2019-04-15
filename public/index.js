@@ -672,24 +672,6 @@ function drawOrganizationChart(params) {
         });
     }
 
-    function addPropertyRecursive(propertyName, propertyValueFunction, element) {
-        if (element[propertyName]) {
-            element[propertyName] = element[propertyName] + ' ' + propertyValueFunction(element);
-        } else {
-            element[propertyName] = propertyValueFunction(element);
-        }
-        if (element.children) {
-            element.children.forEach(function (v) {
-                addPropertyRecursive(propertyName, propertyValueFunction, v)
-            })
-        }
-        if (element._children) {
-            element._children.forEach(function (v) {
-                addPropertyRecursive(propertyName, propertyValueFunction, v)
-            })
-        }
-    }
-
     function departmentClick(item) {
         hide(['.customTooltip-wrapper']);
 

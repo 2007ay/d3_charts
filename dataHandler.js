@@ -8,6 +8,9 @@ const _clone = (data) => {
     return JSON.parse(JSON.stringify(data));
 };
 
+const _clonedData = _clone(rawData);
+IdGenerator(_clonedData);
+
 function recursivelyIdGenerator(data, parentId) {
     if (data.children) {
         data.children.forEach((ch, index) => {
@@ -22,7 +25,6 @@ function recursivelyIdGenerator(data, parentId) {
             }
         });
     }
-    console.log(data.parentId);
 }
 
 function IdGenerator(data) {
@@ -72,28 +74,26 @@ const nodeHasChildren = (node) => node.children && node.children.length ? true :
 
 const loadData = (body) => {
 
-    const _clonedData = _clone(rawData);
-    IdGenerator(_clonedData);
-
     let result = findTreeNode(body.personId, body.type, _clonedData);
-    result.nodeHasChildren = nodeHasChildren(result);
+    let _cloneResult = _clone(result);
+    _cloneResult.nodeHasChildren = nodeHasChildren(_cloneResult);
 
-    if (result) {
+    if (_cloneResult) {
         if (body.type == "up") {
-            result.nodeHasChildren = nodeHasChildren(result);
-            _.each(result.children, (child) => {
+            _cloneResult.nodeHasChildren = nodeHasChildren(_cloneResult);
+            _.each(_cloneResult.children, (child) => {
                 child.nodeHasChildren = nodeHasChildren(child);
                 delete child.children;
             });
-            return result;
+            return _cloneResult;
         } else {
-            _.each(result.children, (child) => {
+            _.each(_cloneResult.children, (child) => {
                 child.nodeHasChildren = nodeHasChildren(child);
                 delete child.children;
             });
         }
     }
-    return result;
+    return _cloneResult;
 }
 
 module.exports = {
