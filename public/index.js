@@ -28,14 +28,10 @@ var params = {
 }
 
 
-function draw(data) {
-    params.data = data;
-    drawOrganizationChart(params);
-}
-
 d3.json(params.dataLoadUrl, function (data) {
+    params.data = data;
     params.pristinaData = JSON.parse(JSON.stringify(data));
-    draw(data);
+    drawOrganizationChart(params);
 })
 
 function drawOrganizationChart(params) {
@@ -573,8 +569,14 @@ function drawOrganizationChart(params) {
 
     function upArrowClick(d) {
         d3.json(getDataUrl(d.uniqueIdentifier, direction.up), function (resp) {
+            debugger;
             //set new childs
-            resp.children = [d];
+            resp.children = resp.children || [];
+            for (var i = 0; i < resp.children.length; i++) {
+                if (resp.children[i].uniqueIdentifier == d.uniqueIdentifier) {
+                    resp.children[i] = d;
+                }
+            }
             //set new root;
             attrs.root = resp;
             //update the tree

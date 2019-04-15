@@ -68,22 +68,27 @@ const findTreeNode = (nodeId, type, _clonedData) => {
     }
 }
 
+const nodeHasChildren = (node) => node.children && node.children.length ? true : false;
+
 const loadData = (body) => {
 
     const _clonedData = _clone(rawData);
     IdGenerator(_clonedData);
 
     let result = findTreeNode(body.personId, body.type, _clonedData);
-    result.nodeHasChildren = result.children && result.children.length ? true : false;
+    result.nodeHasChildren = nodeHasChildren(result);
 
     if (result) {
         if (body.type == "up") {
-            result.nodeHasChildren = result.children && result.children.length ? true : false;
-            delete result.children;
+            result.nodeHasChildren = nodeHasChildren(result);
+            _.each(result.children, (child) => {
+                child.nodeHasChildren = nodeHasChildren(child);
+                delete child.children;
+            });
             return result;
         } else {
             _.each(result.children, (child) => {
-                child.nodeHasChildren = child.children && child.children.length ? true : false;
+                child.nodeHasChildren = nodeHasChildren(child);
                 delete child.children;
             });
         }
