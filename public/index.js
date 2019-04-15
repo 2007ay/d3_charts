@@ -3,7 +3,7 @@ const direction = {
     down: 'down'
 }
 
-const defaultId = 1;
+const defaultId = 11;
 
 const getDataUrl = (id, dir) => `http://localhost:8081/data/${id}/${dir}`;
 
@@ -138,7 +138,8 @@ function drawOrganizationChart(params) {
         var collapsiblesWrapper =
             nodeEnter.append('g')
             .attr('data-id', function (v) {
-                return ++v.uniqueIdentifier;
+                var id = v.uniqueIdentifier + 1;
+                return id
             });
 
         collapsiblesWrapper.append("rect")
@@ -148,7 +149,7 @@ function drawOrganizationChart(params) {
             .attr('x', attrs.nodeWidth / 2 - attrs.collapseCircleRadius)
             .attr('y', 7)
             .attr("width", function (d) {
-                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
+                if (d.parentId) return attrs.collapseCircleRadius;
                 return 0;
             })
 
@@ -161,7 +162,7 @@ function drawOrganizationChart(params) {
 
         //hide collapse rect when node does not have children
         collapsibles.attr("r", function (d) {
-                if (d.children || d._children || d.nodeHasChildren) return attrs.collapseCircleRadius;
+                if (d.parentId) return attrs.collapseCircleRadius;
                 return 0;
             })
             .attr("height", attrs.collapseCircleRadius)
@@ -181,8 +182,6 @@ function drawOrganizationChart(params) {
 
         collapsiblesWrapper.on("click", upArrowClick);
     }
-
-    function upArrowClick() {}
 
     function createCollapsableIcon(nodeEnter) {
 
@@ -572,6 +571,17 @@ function drawOrganizationChart(params) {
         });
     }
 
+    function upArrowClick(d) {
+        d3.json(getDataUrl(d.uniqueIdentifier, direction.up), function (resp) {
+            //set new childs
+            resp.children = [d];
+            //set new root;
+            attrs.root = resp;
+            //update the tree
+            update(resp);
+        });
+    }
+
     // Toggle children on click.
     function collapseIconClick(d) {
 
@@ -600,9 +610,8 @@ function drawOrganizationChart(params) {
             resetNode(d);
             update(d);
         } else {
-            var dir = direction.down;
             d3.json(getDataUrl(d.uniqueIdentifier, direction.down), function (resp) {
-                if (dir == direction.down && resp.children && resp.children.length) {
+                if (resp.children && resp.children.length) {
                     expand(resp);
                     resp.children.forEach((ch) => {
                         ch.depth = 1 + d.depth

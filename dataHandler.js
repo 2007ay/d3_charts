@@ -32,6 +32,7 @@ function IdGenerator(data) {
     data.uniqueIdentifier = uniqueIdentifier;
     data.children.forEach((ch, index) => {
         ch.uniqueIdentifier = getId(uniqueIdentifier, index);
+        ch.parentId = uniqueIdentifier;
         recursivelyIdGenerator(ch, index);
     });
 }
@@ -77,12 +78,14 @@ const loadData = (body) => {
 
     if (result) {
         if (body.type == "up") {
-            //return data;
+            result.nodeHasChildren = result.children && result.children.length ? true : false;
+            delete result.children;
+            return result;
         } else {
             _.each(result.children, (child) => {
                 child.nodeHasChildren = child.children && child.children.length ? true : false;
                 delete child.children;
-            })
+            });
         }
     }
     return result;
